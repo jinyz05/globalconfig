@@ -1,0 +1,85 @@
+#ifndef DEVICETABLEMANAGER_H
+#define DEVICETABLEMANAGER_H
+
+#include <QObject>
+#include "rstdatapoint.h"
+#include "rstdatastream.h"
+#include "rstdevice.h"
+#include "rstkey.h"
+#include "cJSON.h"
+typedef struct{
+    QString devicename;
+    QString devicedesc;
+    QString devicesn;
+    QString deviceid;
+    QString devicekey;
+    bool onLine;
+}DeviceItemInfo;
+class DeviceTableManager : public QObject
+{
+    Q_OBJECT
+signals:
+    void DeviceDeleted(bool);
+    void DeviceAdded(bool,QString devicename,QByteArray device_sn_str);
+    void DeviceAdded(bool,QString devicename,QByteArray device_sn_str,QByteArray device_id_str,QByteArray device_key_str);
+    void DeviceTableUpdated(bool, QList<DeviceItemInfo>);
+    void DeviceListUpdated(bool,QList<DeviceItemInfo>,int,int);
+public:
+    //查看数据流SN
+    bool FindDeviceSN(QString devicename,QString sn);
+    //添加数据流SN
+    bool ADDDeviceSN(QString devicename,QString sn);
+    //添加设备（数据流SN,Key,Device）
+    bool ADDDevice(QString devicename,QString desc,QString sn)
+    {
+        mDeviceName=devicename;
+        mDeviceDesc=desc.toLocal8Bit();
+        mDeviceSN=sn.toLocal8Bit();
+        return ADDDevice1();
+    }
+    //获取所有SN数据流
+    bool GetDeviceTable(QString devicename);
+    //获取所有设备信息
+    bool GetDeviceList(QString devicename,int page);
+    //删除SN数据流
+    bool DeleteDevice(QString devicename,QByteArray sn);
+    //删除所有信息
+    bool DeleteDevice(QString devicename,QByteArray sn,QByteArray device_id_str,QByteArray device_key_str);
+    explicit DeviceTableManager(QObject *parent,RSTDevice* device,RSTKey *key,RSTDataStream* stream,RSTDataPoint* datapoint);
+
+    ~DeviceTableManager();
+    QString mDeviceName;
+    QByteArray mDeviceSN;
+    QByteArray mDeviceID;
+    QByteArray mDeviceKey;
+    QByteArray mDeviceDesc;
+    bool mDeviceTableEntryFound;
+private slots:
+    void FindDeviceSNResp(bool ok, QByteArray content);
+    void AddDeviceSNResp(bool);
+    void AddDevice1Resp(bool,QByteArray);
+    void AddDevice2Resp(bool,QByteArray);
+    void AddDevice3Resp(bool);
+
+    void DeleteDeviceResp(bool);
+    void DeleteDevice1Resp(bool);
+    void DeleteDevice2Resp(bool);
+    void DeleteDevice3Resp(bool);
+
+    void GetDeviceListResp(bool,QByteArray);
+    void GetDeviceTableResp(bool,QByteArray);
+private:
+    bool ADDDevice1();
+    bool ADDDevice2();
+    bool ADDDevice3();
+
+    bool DeleteDevice2(QByteArray device_id,QByteArray device_key);
+    bool DeleteDevice3(QString devicename,QByteArray device_key_str);
+    bool DecodeDeviceValue(QByteArray value,QString & name_,QByteArray& id_,QByteArray& key_);
+    RSTDevice*   mRSTDevice;
+    RSTKey* mRSTKey;
+    RSTDataStream *mRSTDataStream;
+    RSTDataPoint *mRSTDataPoint;
+};
+
+#endif // DEVICETABLEMANAGER_H
